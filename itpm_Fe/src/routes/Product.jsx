@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
-import { FaFilter, FaStar, FaArrowRight, FaShoppingCart, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaFilter, FaStar, FaArrowRight, FaShoppingCart, FaChevronLeft, FaChevronRight, FaSearch, FaSort } from 'react-icons/fa';
 import Footer from '../Components/Footer';
 import Hero from '../assets/Images/Home/Group 276.png';
+import { useNavigate } from 'react-router-dom';
 
 const Product = () => {
   const [priceRange, setPriceRange] = useState('all');
   const [brand, setBrand] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('featured');
+  const [availability, setAvailability] = useState('all');
   const productsPerPage = 6;
+  const navigate = useNavigate();
 
   const products = [
     {
@@ -175,25 +180,58 @@ const Product = () => {
   ];
 
   const filteredProducts = products.filter(product => {
+    // Search filter
+    const searchMatch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       product.specs.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Price filter
     const priceMatch = priceRange === 'all' ? true :
       priceRange === 'under1000' ? product.price < 1000 :
       priceRange === '1000to2000' ? product.price >= 1000 && product.price <= 2000 :
       product.price > 2000;
     
+    // Brand filter
     const brandMatch = brand === 'all' ? true : product.brand === brand;
-    
-    return priceMatch && brandMatch;
+
+    // Availability filter (mock data - you can add actual stock data)
+    const availabilityMatch = availability === 'all' ? true :
+      availability === 'in-stock' ? true : // Replace with actual stock check
+      availability === 'out-of-stock' ? false : // Replace with actual stock check
+      true; // Coming soon
+
+    return searchMatch && priceMatch && brandMatch && availabilityMatch;
+  });
+
+  // Sort products
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case 'price-low':
+        return a.price - b.price;
+      case 'price-high':
+        return b.price - a.price;
+      case 'rating':
+        return b.rating - a.rating;
+      case 'newest':
+        return b.id - a.id; // Assuming higher ID means newer
+      default:
+        return 0;
+    }
   });
 
   // Calculate pagination
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const totalPages = Math.ceil(sortedProducts.length / productsPerPage);
   const startIndex = (currentPage - 1) * productsPerPage;
   const endIndex = startIndex + productsPerPage;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+  const currentProducts = sortedProducts.slice(startIndex, endIndex);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleAddToCart = (productId) => {
+    navigate(`/product/${productId}`);
   };
 
   return (
@@ -220,6 +258,41 @@ const Product = () => {
 
       {/* Products Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Search and Sort Bar */}
+        <div className="mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full md:w-96">
+            <FaSearch className="absolute left-3 top-2.5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-black/30 border border-purple-900/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <FaSort className="text-purple-400" />
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="appearance-none pl-4 pr-10 py-2.5 bg-black/30 border border-purple-900/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 cursor-pointer w-48 shadow-lg hover:shadow-purple-500/10"
+              >
+                <option value="featured" className="bg-gray-900">Featured</option>
+                <option value="price-low" className="bg-gray-900">Price: Low to High</option>
+                <option value="price-high" className="bg-gray-900">Price: High to Low</option>
+                <option value="rating" className="bg-gray-900">Highest Rated</option>
+                <option value="newest" className="bg-gray-900">Newest First</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="flex gap-8">
           {/* Filter Sidebar */}
           <div className="w-64 flex-shrink-0">
@@ -231,57 +304,75 @@ const Product = () => {
               
               {/* Price Range Filter */}
               <div className="mb-6">
-                <h3 className="text-lg font-medium mb-3">Price Range</h3>
-                <div className="space-y-2">
-                  <label className="flex items-center">
+                <h3 className="text-lg font-medium mb-4 flex items-center text-purple-300">
+                  <span className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2"></span>
+                  Price Range
+                </h3>
+                <div className="space-y-3">
+                  <label className="relative flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-purple-900/20 group">
                     <input
                       type="radio"
                       name="price"
                       value="all"
                       checked={priceRange === 'all'}
                       onChange={(e) => setPriceRange(e.target.value)}
-                      className="mr-2"
+                      className="peer sr-only"
                     />
-                    All Prices
+                    <div className="w-5 h-5 border-2 border-purple-500 rounded-full flex items-center justify-center peer-checked:bg-purple-500 transition-all duration-200">
+                      <div className="w-2.5 h-2.5 rounded-full bg-white opacity-0 peer-checked:opacity-100 transition-all duration-200"></div>
+                    </div>
+                    <span className="ml-3 text-gray-300 group-hover:text-white transition-colors duration-200">All Prices</span>
                   </label>
-                  <label className="flex items-center">
+
+                  <label className="relative flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-purple-900/20 group">
                     <input
                       type="radio"
                       name="price"
                       value="under1000"
                       checked={priceRange === 'under1000'}
                       onChange={(e) => setPriceRange(e.target.value)}
-                      className="mr-2"
+                      className="peer sr-only"
                     />
-                    Under $1000
+                    <div className="w-5 h-5 border-2 border-purple-500 rounded-full flex items-center justify-center peer-checked:bg-purple-500 transition-all duration-200">
+                      <div className="w-2.5 h-2.5 rounded-full bg-white opacity-0 peer-checked:opacity-100 transition-all duration-200"></div>
+                    </div>
+                    <span className="ml-3 text-gray-300 group-hover:text-white transition-colors duration-200">Under $1000</span>
                   </label>
-                  <label className="flex items-center">
+
+                  <label className="relative flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-purple-900/20 group">
                     <input
                       type="radio"
                       name="price"
                       value="1000to2000"
                       checked={priceRange === '1000to2000'}
                       onChange={(e) => setPriceRange(e.target.value)}
-                      className="mr-2"
+                      className="peer sr-only"
                     />
-                    $1000 - $2000
+                    <div className="w-5 h-5 border-2 border-purple-500 rounded-full flex items-center justify-center peer-checked:bg-purple-500 transition-all duration-200">
+                      <div className="w-2.5 h-2.5 rounded-full bg-white opacity-0 peer-checked:opacity-100 transition-all duration-200"></div>
+                    </div>
+                    <span className="ml-3 text-gray-300 group-hover:text-white transition-colors duration-200">$1000 - $2000</span>
                   </label>
-                  <label className="flex items-center">
+
+                  <label className="relative flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-purple-900/20 group">
                     <input
                       type="radio"
                       name="price"
                       value="over2000"
                       checked={priceRange === 'over2000'}
                       onChange={(e) => setPriceRange(e.target.value)}
-                      className="mr-2"
+                      className="peer sr-only"
                     />
-                    Over $2000
+                    <div className="w-5 h-5 border-2 border-purple-500 rounded-full flex items-center justify-center peer-checked:bg-purple-500 transition-all duration-200">
+                      <div className="w-2.5 h-2.5 rounded-full bg-white opacity-0 peer-checked:opacity-100 transition-all duration-200"></div>
+                    </div>
+                    <span className="ml-3 text-gray-300 group-hover:text-white transition-colors duration-200">Over $2000</span>
                   </label>
                 </div>
               </div>
 
               {/* Brand Filter */}
-              <div>
+              <div className="mb-6">
                 <h3 className="text-lg font-medium mb-3">Brand</h3>
                 <div className="space-y-2">
                   <label className="flex items-center">
@@ -363,6 +454,57 @@ const Product = () => {
                   </label>
                 </div>
               </div>
+
+              {/* Availability Filter */}
+              <div>
+                <h3 className="text-lg font-medium mb-3">Availability</h3>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="availability"
+                      value="all"
+                      checked={availability === 'all'}
+                      onChange={(e) => setAvailability(e.target.value)}
+                      className="mr-2"
+                    />
+                    All Products
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="availability"
+                      value="in-stock"
+                      checked={availability === 'in-stock'}
+                      onChange={(e) => setAvailability(e.target.value)}
+                      className="mr-2"
+                    />
+                    In Stock
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="availability"
+                      value="out-of-stock"
+                      checked={availability === 'out-of-stock'}
+                      onChange={(e) => setAvailability(e.target.value)}
+                      className="mr-2"
+                    />
+                    Out of Stock
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="availability"
+                      value="coming-soon"
+                      checked={availability === 'coming-soon'}
+                      onChange={(e) => setAvailability(e.target.value)}
+                      className="mr-2"
+                    />
+                    Coming Soon
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -398,7 +540,10 @@ const Product = () => {
                       <span className="text-2xl font-bold text-purple-400">
                         ${product.price}
                       </span>
-                      <button className="bg-purple-600 text-white px-3 py-1.5 rounded-lg hover:bg-purple-700 transition duration-300 flex items-center gap-2 text-sm hover:shadow-lg hover:shadow-purple-500/25">
+                      <button 
+                        onClick={() => handleAddToCart(product.id)}
+                        className="bg-purple-600 text-white px-3 py-1.5 rounded-lg hover:bg-purple-700 transition duration-300 flex items-center gap-2 text-sm hover:shadow-lg hover:shadow-purple-500/25"
+                      >
                         <FaShoppingCart className="text-xs" />
                         Add to Cart
                       </button>
@@ -453,7 +598,7 @@ const Product = () => {
 
                 {/* Results Count */}
                 <div className="text-gray-400 text-sm">
-                  Page {currentPage} of {totalPages} | Showing {startIndex + 1} to {Math.min(endIndex, filteredProducts.length)} of {filteredProducts.length} products
+                  Page {currentPage} of {totalPages} | Showing {startIndex + 1} to {Math.min(endIndex, sortedProducts.length)} of {sortedProducts.length} products
                 </div>
               </div>
             )}
