@@ -1,14 +1,17 @@
-import React, { useState, useRef } from 'react';
-import { FaUser, FaShoppingBag, FaHeart, FaComments, FaCog, FaEdit, FaTrash, FaSave, FaTimes, FaCamera, FaUpload, FaSignOutAlt } from 'react-icons/fa';
+import React, { useState, useRef, useEffect } from 'react';
+import { FaUser, FaShoppingBag, FaHeart, FaComments, FaCog, FaEdit, FaTrash, FaSave, FaTimes, FaCamera, FaUpload, FaSignOutAlt, FaDownload, FaSpinner } from 'react-icons/fa';
 import Footer from '../Components/Footer';
 import ProfileCover from '../../src/assets/Images/Home/Hero.jpg'
+import OrderHistory from '../Components/OrderHistory';
+import { useSearchParams } from 'react-router-dom';
 // Add Space Grotesk font import
 const spaceGrotesk = {
   fontFamily: "'Space Grotesk', sans-serif",
 };
 
 const Profile = () => {
-  const [activeTab, setActiveTab] = useState('profile');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile');
   const [isEditing, setIsEditing] = useState(false);
   const [profileImage, setProfileImage] = useState('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop');
   const [coverImage, setCoverImage] = useState(ProfileCover);
@@ -23,26 +26,13 @@ const Profile = () => {
     billingAddress: '123 Main St, City, Country',
     preferredPayment: 'Credit Card'
   });
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
 
   const profileImageRef = useRef(null);
   const coverImageRef = useRef(null);
 
-  const [orders, setOrders] = useState([
-    {
-      id: '1',
-      date: '2024-03-15',
-      items: 'Laptop Pro X',
-      total: '$1299.99',
-      status: 'Completed'
-    },
-    {
-      id: '2',
-      date: '2024-03-10',
-      items: 'Gaming Laptop',
-      total: '$1999.99',
-      status: 'Pending'
-    }
-  ]);
+  const [orders, setOrders] = useState([]);
 
   const [wishlist] = useState([
     {
@@ -71,6 +61,12 @@ const Profile = () => {
       message: 'Your order has been shipped.'
     }
   ]);
+
+  useEffect(() => {
+    // Get orders from localStorage
+    const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+    setOrders(savedOrders);
+  }, []);
 
   const handleProfileImageChange = (e) => {
     const file = e.target.files[0];
@@ -125,6 +121,51 @@ const Profile = () => {
       // Here you would typically update the order in your backend
       setShowEditModal(false);
       setSelectedOrder(null);
+    }
+  };
+
+  const handleDownloadOrders = async () => {
+    setIsDownloading(true);
+    
+    try {
+      // Create CSV content
+      const headers = [
+        'Order ID',
+        'Date',
+        'Items',
+        'Total',
+        'Status'
+      ];
+
+      const csvContent = [
+        headers.join(','),
+        ...orders.map(order => [
+          `"${order.id}"`,
+          `"${order.date}"`,
+          `"${order.items}"`,
+          `"${order.total}"`,
+          `"${order.status}"`
+        ].join(','))
+      ].join('\n');
+
+      // Create and trigger download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `orders_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Show success notification
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+    } catch (error) {
+      console.error('Error downloading orders:', error);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -189,7 +230,7 @@ const Profile = () => {
             </div>
           </div>
           <div className="mt-24">
-            <h1 className="text-3xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 tracking-tight">{userData.fullName}</h1>
+            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 tracking-tight">{userData.fullName}</h1>
             <p className="text-gray-300 font-light text-lg tracking-wide">{userData.email}</p>
           </div>
         </div>
@@ -336,53 +377,40 @@ const Profile = () => {
           {/* Orders Section */}
           {activeTab === 'orders' && (
             <div className="bg-black/30 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-purple-900/50">
-              <table className="min-w-full divide-y divide-purple-800">
-                <thead className="bg-black/40">
-                  <tr>
-                    <th className="px-8 py-4 text-left text-sm font-semibold text-gray-300 uppercase tracking-wider">Order ID</th>
-                    <th className="px-8 py-4 text-left text-sm font-semibold text-gray-300 uppercase tracking-wider">Date</th>
-                    <th className="px-8 py-4 text-left text-sm font-semibold text-gray-300 uppercase tracking-wider">Items</th>
-                    <th className="px-8 py-4 text-left text-sm font-semibold text-gray-300 uppercase tracking-wider">Total</th>
-                    <th className="px-8 py-4 text-left text-sm font-semibold text-gray-300 uppercase tracking-wider">Status</th>
-                    <th className="px-8 py-4 text-left text-sm font-semibold text-gray-300 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {orders.map((order) => (
-                    <tr key={order.id} className="bg-black/10 hover:bg-purple-900/20 transition-colors duration-300">
-                      <td className="px-8 py-6 whitespace-nowrap text-sm font-medium text-white tracking-wide">#{order.id}</td>
-                      <td className="px-8 py-6 whitespace-nowrap text-sm text-gray-300 tracking-wide">{order.date}</td>
-                      <td className="px-8 py-6 whitespace-nowrap text-sm text-gray-300 tracking-wide">{order.items}</td>
-                      <td className="px-8 py-6 whitespace-nowrap text-sm font-medium text-white tracking-wide">{order.total}</td>
-                      <td className="px-8 py-6 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full tracking-wide ${
-                          order.status === 'Completed' ? 'bg-green-900/50 text-green-200 border border-green-800' :
-                          order.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-200 border border-yellow-800' :
-                          'bg-red-900/50 text-red-200 border border-red-800'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => handleEditOrder(order)}
-                            className="text-blue-400 hover:text-blue-300 transition-colors duration-300"
-                          >
-                            <FaEdit />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteOrder(order)}
-                            className="text-red-400 hover:text-red-300 transition-colors duration-300"
-                          >
-                            <FaTrash />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="p-6 border-b border-purple-800 flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-white">My Orders</h2>
+                <button
+                  onClick={handleDownloadOrders}
+                  disabled={isDownloading}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                    isDownloading
+                      ? 'bg-purple-700 text-gray-300 cursor-not-allowed'
+                      : 'bg-purple-600 text-white hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-500/25'
+                  }`}
+                >
+                  {isDownloading ? (
+                    <>
+                      <FaSpinner className="animate-spin" />
+                      <span>Downloading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaDownload />
+                      <span>Download Orders</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              {showNotification && (
+                <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
+                  Orders downloaded successfully!
+                </div>
+              )}
+              <OrderHistory 
+                orders={orders} 
+                onEditOrder={handleEditOrder}
+                onDeleteOrder={handleDeleteOrder}
+              />
             </div>
           )}
 
