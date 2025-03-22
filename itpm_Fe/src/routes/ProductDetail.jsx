@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
+import { FaShieldAlt, FaShoppingCart, FaStar } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { FaStar, FaShoppingCart, FaCreditCard, FaTruck, FaShieldAlt } from 'react-icons/fa';
 import Footer from '../Components/Footer';
 
 const ProductDetail = () => {
@@ -26,7 +26,7 @@ const ProductDetail = () => {
   const product = {
     id: 1,
     name: "MacBook Pro M3",
-    price: 1999.99,
+    price: 2000.99,
     image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500&h=300&fit=crop",
     rating: 4.8,
     specs: "M3 Chip, 16GB RAM, 512GB SSD",
