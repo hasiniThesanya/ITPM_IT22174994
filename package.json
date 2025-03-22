@@ -16,5 +16,9 @@
     "react"
   ],
   "author": "",
-  "license": "ISC"
-} 
+  "license": "ISC",
+  "dependencies": {
+    "react-slick": "^0.30.3",
+    "slick-carousel": "^1.8.1"
+  }
+}

@@ -1,9 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaUser, FaShoppingBag, FaHeart, FaComments, FaCog, FaEdit, FaTrash, FaSave, FaTimes, FaCamera, FaUpload, FaSignOutAlt, FaDownload, FaSpinner } from 'react-icons/fa';
+import { FaUser, FaShoppingBag, FaHeart, FaComments, FaCog, FaEdit, FaTrash, FaSave, FaTimes, FaCamera, FaUpload, FaSignOutAlt, FaDownload, FaSpinner, FaMapMarkerAlt, FaBriefcase, FaEnvelope, FaPhone, FaCalendarAlt, FaVenusMars, FaCreditCard, FaGlobe, FaFacebookF, FaTwitter, FaLinkedinIn, FaInstagram } from 'react-icons/fa';
+import Slider from 'react-slick';
 import Footer from '../Components/Footer';
 import ProfileCover from '../../src/assets/Images/Home/Hero.jpg'
 import OrderHistory from '../Components/OrderHistory';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+import "../styles/carousel.css";
 // Add Space Grotesk font import
 const spaceGrotesk = {
   fontFamily: "'Space Grotesk', sans-serif",
@@ -22,12 +26,31 @@ const Profile = () => {
     fullName: 'John Doe',
     email: 'john.doe@example.com',
     phone: '+1 234 567 8900',
+    dateOfBirth: '1990-01-01',
+    gender: 'Male',
+    occupation: 'Software Engineer',
+    company: 'Tech Corp',
     shippingAddress: '123 Main St, City, Country',
     billingAddress: '123 Main St, City, Country',
-    preferredPayment: 'Credit Card'
+    preferredPayment: 'Credit Card',
+    socialMedia: {
+      facebook: '',
+      twitter: '',
+      linkedin: '',
+      instagram: ''
+    },
+    preferences: {
+      newsletter: true,
+      notifications: true,
+      twoFactorAuth: false
+    }
   });
   const [isDownloading, setIsDownloading] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [accountCreationDate] = useState('2023-09-15'); // This should come from your backend
+  const [deleteError, setDeleteError] = useState('');
 
   const profileImageRef = useRef(null);
   const coverImageRef = useRef(null);
@@ -61,6 +84,8 @@ const Profile = () => {
       message: 'Your order has been shipped.'
     }
   ]);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Get orders from localStorage
@@ -109,11 +134,14 @@ const Profile = () => {
   };
 
   const handleConfirmDelete = () => {
-    if (selectedOrder) {
-      setOrders(orders.filter(o => o.id !== selectedOrder.id));
-      setShowDeleteModal(false);
-      setSelectedOrder(null);
+    if (deleteConfirmText.toLowerCase() !== 'yes i need delete my account') {
+      setDeleteError('Please type the exact phrase to confirm deletion');
+      return;
     }
+    
+    // Here you would typically make an API call to delete the account
+    localStorage.clear();
+    navigate('/login');
   };
 
   const handleSaveEdit = () => {
@@ -169,22 +197,37 @@ const Profile = () => {
     }
   };
 
+  const isAccountOldEnough = () => {
+    const creationDate = new Date(accountCreationDate);
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    return creationDate <= sixMonthsAgo;
+  };
+
+  const handleDeleteAccount = () => {
+    if (!isAccountOldEnough()) {
+      setDeleteError('Your account must be at least 6 months old to be deleted.');
+      return;
+    }
+    setShowDeleteConfirmation(true);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 text-white" style={spaceGrotesk}>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-slate-900 to-black text-white" style={spaceGrotesk}>
       {/* Profile Header */}
-      <div className="bg-black/30 backdrop-blur-sm shadow-lg border-b border-purple-900/50">
+      <div className="bg-black/20 backdrop-blur-xl border-b border-indigo-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="relative">
             {/* Cover Image */}
-            <div className="relative h-96 md:h-[22rem] rounded-2xl overflow-hidden shadow-2xl">
+            <div className="relative h-96 md:h-[22rem] rounded-3xl overflow-hidden shadow-[0_35px_60px_-15px_rgba(99,102,241,0.3)]">
               <img
                 src={coverImage}
                 alt="Cover"
-                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                className="w-full h-full object-cover transition-all duration-700 hover:scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
-                <label className="cursor-pointer bg-white/90 backdrop-blur-sm text-gray-800 px-8 py-4 rounded-xl flex items-center space-x-3 hover:bg-white transition-all duration-300 transform hover:scale-105 font-medium shadow-xl">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-all duration-500">
+                <label className="cursor-pointer bg-white/90 backdrop-blur-xl text-gray-800 px-8 py-4 rounded-2xl flex items-center space-x-3 hover:bg-white transition-all duration-500 transform hover:scale-105 hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] font-medium">
                   <FaCamera className="h-6 w-6" />
                   <span>Change Cover Photo</span>
                   <input
@@ -200,14 +243,15 @@ const Profile = () => {
 
             {/* Profile Image */}
             <div className="absolute -bottom-20 left-8">
-              <div className="relative">
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
                 <img
-                  className="h-40 w-40 rounded-full border-4 border-purple-500 object-cover shadow-2xl transform hover:scale-105 transition-transform duration-300"
+                  className="relative h-40 w-40 rounded-full object-cover ring-4 ring-indigo-500/30 transition-all duration-500 group-hover:scale-105"
                   src={profileImage}
                   alt="Profile"
                 />
                 <div className="absolute bottom-0 right-0 flex space-x-3">
-                  <label className="cursor-pointer bg-purple-600 text-white rounded-full p-3 hover:bg-purple-700 shadow-lg transform hover:scale-110 transition-all duration-300">
+                  <label className="cursor-pointer bg-indigo-600/90 backdrop-blur-xl text-white rounded-full p-3 hover:bg-indigo-700 transition-all duration-300 transform hover:scale-110 hover:shadow-[0_0_20px_rgba(99,102,241,0.5)]">
                     <FaCamera className="h-5 w-5" />
                     <input
                       type="file"
@@ -220,7 +264,7 @@ const Profile = () => {
                   {!isEditing && (
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="bg-purple-600 text-white rounded-full p-3 hover:bg-purple-700 shadow-lg transform hover:scale-110 transition-all duration-300"
+                      className="bg-indigo-600/90 backdrop-blur-xl text-white rounded-full p-3 hover:bg-indigo-700 transition-all duration-300 transform hover:scale-110 hover:shadow-[0_0_20px_rgba(99,102,241,0.5)]"
                     >
                       <FaEdit className="h-5 w-5" />
                     </button>
@@ -230,16 +274,17 @@ const Profile = () => {
             </div>
           </div>
           <div className="mt-24">
-            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 tracking-tight">{userData.fullName}</h1>
-            <p className="text-gray-300 font-light text-lg tracking-wide">{userData.email}</p>
+            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-blue-400 to-indigo-400 tracking-tight">{userData.fullName}</h1>
+            <p className="text-gray-300 font-light text-lg tracking-wide mt-2">{userData.email}</p>
           </div>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-24">
-        <div className="bg-black/30 backdrop-blur-sm rounded-xl shadow-lg border border-purple-900/50 p-1">
-          <nav className="flex space-x-8 overflow-x-auto">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Tabs */}
+        <div className="bg-black/30 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-indigo-500/20 p-1.5">
+          <nav className="flex space-x-8 overflow-x-auto scrollbar-thin scrollbar-thumb-indigo-500/20 scrollbar-track-transparent">
             {[
               { id: 'profile', label: 'Profile', icon: FaUser },
               { id: 'orders', label: 'Orders', icon: FaShoppingBag },
@@ -251,13 +296,13 @@ const Profile = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-3 py-4 px-6 rounded-lg font-medium text-sm transition-all duration-300 tracking-wide ${
+                className={`flex items-center space-x-3 py-4 px-6 rounded-xl font-medium text-sm transition-all duration-500 tracking-wide ${
                   activeTab === tab.id
-                    ? 'bg-purple-600 text-white shadow-lg'
-                    : 'text-gray-400 hover:text-purple-300 hover:bg-purple-900/30'
+                    ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-[0_8px_30px_rgb(99,102,241,0.3)] scale-105'
+                    : 'text-gray-400 hover:text-indigo-300 hover:bg-indigo-900/30'
                 }`}
               >
-                <tab.icon className="h-5 w-5" />
+                <tab.icon className={`h-5 w-5 transition-transform duration-300 ${activeTab === tab.id ? 'scale-110' : ''}`} />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -268,124 +313,406 @@ const Profile = () => {
         <div className="mt-8">
           {/* Profile Section */}
           {activeTab === 'profile' && (
-            <div className="bg-black/30 backdrop-blur-sm shadow-xl rounded-xl p-8 border border-purple-900/50">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2 tracking-wide">Full Name</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={userData.fullName}
-                        onChange={(e) => setUserData({ ...userData, fullName: e.target.value })}
-                        className="w-full rounded-lg bg-white/5 border border-purple-900/50 text-white shadow-sm focus:border-purple-400 focus:ring-purple-400 font-light p-3 transition-all duration-300 tracking-wide"
-                      />
-                    ) : (
-                      <p className="text-white font-medium text-lg tracking-wide">{userData.fullName}</p>
-                    )}
+            <div className="space-y-6">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  {
+                    title: "Total Orders",
+                    value: "24",
+                    change: "↑ 12%",
+                    period: "from last month",
+                    icon: FaShoppingBag,
+                    gradient: "from-indigo-600/20 to-blue-600/20"
+                  },
+                  {
+                    title: "Wishlist Items",
+                    value: "12",
+                    change: "↑ 8%",
+                    period: "from last week",
+                    icon: FaHeart,
+                    gradient: "from-sky-600/20 to-cyan-600/20"
+                  },
+                  {
+                    title: "Reviews",
+                    value: "48",
+                    change: "↑ 24%",
+                    period: "from last month",
+                    icon: FaComments,
+                    gradient: "from-blue-600/20 to-indigo-600/20"
+                  },
+                  {
+                    title: "Total Spent",
+                    value: "$2.4k",
+                    change: "↑ 18%",
+                    period: "from last month",
+                    icon: FaCreditCard,
+                    gradient: "from-violet-600/20 to-indigo-600/20"
+                  }
+                ].map((stat, index) => (
+                  <div
+                    key={index}
+                    className={`group hover:scale-105 transition-all duration-500 bg-gradient-to-br ${stat.gradient} backdrop-blur-xl rounded-2xl p-6 border border-indigo-500/20 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(99,102,241,0.3)]`}
+                  >
+                    <div className="flex flex-col h-full">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="bg-white/10 p-3 rounded-xl group-hover:bg-white/20 transition-all duration-300 group-hover:scale-110">
+                          <stat.icon className="h-6 w-6 text-indigo-400 group-hover:text-indigo-300" />
+                        </div>
+                        <span className="text-emerald-400 text-sm font-medium group-hover:text-emerald-300">{stat.change}</span>
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-white group-hover:text-indigo-300 transition-colors duration-300">{stat.value}</h3>
+                        <p className="text-gray-400 text-sm mt-1 group-hover:text-gray-300 transition-colors duration-300">{stat.title}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2 tracking-wide">Email</label>
-                    {isEditing ? (
-                      <input
-                        type="email"
-                        value={userData.email}
-                        onChange={(e) => setUserData({ ...userData, email: e.target.value })}
-                        className="w-full rounded-lg bg-white/5 border border-purple-900/50 text-white shadow-sm focus:border-purple-400 focus:ring-purple-400 font-light p-3 transition-all duration-300 tracking-wide"
-                      />
-                    ) : (
-                      <p className="text-white font-medium text-lg tracking-wide">{userData.email}</p>
-                    )}
+                ))}
+              </div>
+
+              {/* Main Content Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Recent Activity - Spans 2 columns */}
+                <div className="lg:col-span-2 bg-gradient-to-br from-black/40 to-indigo-900/20 backdrop-blur-xl rounded-2xl border border-indigo-500/20 shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden">
+                  <div className="p-8">
+                    <div className="flex items-center justify-between mb-8">
+                      <div className="flex items-center gap-4">
+                        <div className="h-8 w-1 bg-indigo-500 rounded-full"></div>
+                        <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-blue-400">Recent Activity</h3>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="px-4 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
+                          <span className="text-indigo-300 text-sm">Last 7 days</span>
+                        </div>
+                        <button className="text-indigo-400 hover:text-indigo-300 transition-colors duration-300 text-sm flex items-center gap-2">
+                          View All
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5-5 5" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="relative px-8">
+                      <Slider
+                        dots={true}
+                        infinite={true}
+                        speed={500}
+                        slidesToShow={2}
+                        slidesToScroll={1}
+                        autoplay={true}
+                        autoplaySpeed={3000}
+                        responsive={[
+                          {
+                            breakpoint: 1024,
+                            settings: {
+                              slidesToShow: 2,
+                            }
+                          },
+                          {
+                            breakpoint: 640,
+                            settings: {
+                              slidesToShow: 1,
+                            }
+                          }
+                        ]}
+                        className="activity-slider -mx-4"
+                      >
+                        {[
+                          {
+                            icon: FaShoppingBag,
+                            title: "Purchased MacBook Pro",
+                            time: "2 hours ago",
+                            amount: "$1,999.00",
+                            status: "Completed",
+                            statusColor: "emerald",
+                            bgGradient: "from-emerald-500/5 to-blue-500/5"
+                          },
+                          {
+                            icon: FaHeart,
+                            title: "Added to Wishlist",
+                            time: "4 hours ago",
+                            item: "iPhone 15 Pro",
+                            status: "Saved",
+                            statusColor: "pink",
+                            bgGradient: "from-pink-500/5 to-purple-500/5"
+                          },
+                          {
+                            icon: FaComments,
+                            title: "Reviewed Product",
+                            time: "1 day ago",
+                            item: "Dell XPS 13",
+                            status: "Published",
+                            statusColor: "blue",
+                            bgGradient: "from-blue-500/5 to-indigo-500/5"
+                          },
+                          {
+                            icon: FaCreditCard,
+                            title: "Payment Processed",
+                            time: "2 days ago",
+                            amount: "$899.00",
+                            status: "Success",
+                            statusColor: "indigo",
+                            bgGradient: "from-indigo-500/5 to-violet-500/5"
+                          }
+                        ].map((activity, index) => (
+                          <div key={index} className="px-4 py-2">
+                            <div className={`bg-gradient-to-br ${activity.bgGradient} backdrop-blur-sm rounded-xl border border-indigo-500/20 hover:border-indigo-500/40 transition-all duration-300 group hover:transform hover:scale-[1.02] hover:shadow-xl`}>
+                              <div className="p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                  <div className="flex items-center gap-4">
+                                    <div className={`bg-${activity.statusColor}-500/10 p-3 rounded-xl group-hover:scale-110 transition-all duration-300`}>
+                                      <activity.icon className={`h-6 w-6 text-${activity.statusColor}-400`} />
+                                    </div>
+                                    <div>
+                                      <h4 className="text-white font-medium group-hover:text-indigo-300 transition-colors duration-300">{activity.title}</h4>
+                                      <p className="text-gray-400 text-sm mt-1">{activity.time}</p>
+                                    </div>
+                                  </div>
+                                  <div className={`px-3 py-1 rounded-full text-xs font-medium bg-${activity.statusColor}-500/10 text-${activity.statusColor}-400 border border-${activity.statusColor}-500/20`}>
+                                    {activity.status}
+                                  </div>
+                                </div>
+                                <div className="ml-14">
+                                  {activity.amount && (
+                                    <p className="text-lg font-semibold text-white group-hover:text-indigo-300 transition-colors duration-300">
+                                      {activity.amount}
+                                    </p>
+                                  )}
+                                  {activity.item && (
+                                    <p className="text-gray-300 group-hover:text-indigo-300 transition-colors duration-300">
+                                      {activity.item}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </Slider>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2 tracking-wide">Phone</label>
-                    {isEditing ? (
-                      <input
-                        type="tel"
-                        value={userData.phone}
-                        onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
-                        className="w-full rounded-lg bg-white/5 border border-purple-900/50 text-white shadow-sm focus:border-purple-400 focus:ring-purple-400 font-light p-3 transition-all duration-300 tracking-wide"
-                      />
-                    ) : (
-                      <p className="text-white font-medium text-lg tracking-wide">{userData.phone}</p>
-                    )}
+                  <div className="border-t border-indigo-500/20 p-6 bg-black/20">
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-400 text-sm">Showing recent 4 of 24 activities</p>
+                      <button className="text-indigo-400 hover:text-indigo-300 transition-colors duration-300 text-sm flex items-center gap-2 group">
+                        See all activities
+                        <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2 tracking-wide">Shipping Address</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={userData.shippingAddress}
-                        onChange={(e) => setUserData({ ...userData, shippingAddress: e.target.value })}
-                        className="w-full rounded-lg bg-white/5 border border-purple-900/50 text-white shadow-sm focus:border-purple-400 focus:ring-purple-400 font-light p-3 transition-all duration-300 tracking-wide"
-                      />
+
+                {/* Personal Stats - Spans 1 column */}
+                <div className="bg-gradient-to-br from-indigo-600/10 to-blue-600/10 backdrop-blur-xl rounded-2xl p-6 border border-indigo-500/20">
+                  <h3 className="text-xl font-semibold text-white mb-6">Personal Stats</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-black/20 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <FaHeart className="text-pink-500 h-5 w-5" />
+                        <span className="text-gray-300">Wishlist Items</span>
+                      </div>
+                      <span className="text-white font-semibold">12</span>
+                    </div>
+                    <div className="flex items-center justify-between p-4 bg-black/20 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <FaComments className="text-blue-500 h-5 w-5" />
+                        <span className="text-gray-300">Reviews Given</span>
+                      </div>
+                      <span className="text-white font-semibold">48</span>
+                    </div>
+                    <div className="flex items-center justify-between p-4 bg-black/20 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <FaCreditCard className="text-emerald-500 h-5 w-5" />
+                        <span className="text-gray-300">Total Spent</span>
+                      </div>
+                      <span className="text-white font-semibold">$2.4k</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Personal Information - Spans full width */}
+                <div className="lg:col-span-3 bg-black/30 backdrop-blur-xl rounded-2xl p-8 border border-indigo-500/20 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+                  <div className="flex justify-between items-center mb-8">
+                    <h2 className="text-2xl font-bold text-white">Personal Information</h2>
+                    {!isEditing ? (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="px-6 py-3 bg-indigo-600 rounded-xl text-white hover:bg-indigo-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-indigo-500/25"
+                      >
+                        <FaEdit className="h-5 w-5" />
+                        <span>Edit Profile</span>
+                      </button>
                     ) : (
-                      <p className="text-white font-medium text-lg tracking-wide">{userData.shippingAddress}</p>
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => setIsEditing(false)}
+                          className="px-6 py-3 border border-indigo-500/50 rounded-xl text-indigo-300 hover:bg-indigo-900/30 transition-all duration-300 flex items-center gap-2"
+                        >
+                          <FaTimes className="h-5 w-5" />
+                          <span>Cancel</span>
+                        </button>
+                        <button
+                          onClick={handleSave}
+                          className="px-6 py-3 bg-indigo-600 rounded-xl text-white hover:bg-indigo-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-indigo-500/25"
+                        >
+                          <FaSave className="h-5 w-5" />
+                          <span>Save Changes</span>
+                        </button>
+                      </div>
                     )}
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2 tracking-wide">Billing Address</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={userData.billingAddress}
-                        onChange={(e) => setUserData({ ...userData, billingAddress: e.target.value })}
-                        className="w-full rounded-lg bg-white/5 border border-purple-900/50 text-white shadow-sm focus:border-purple-400 focus:ring-purple-400 font-light p-3 transition-all duration-300 tracking-wide"
-                      />
-                    ) : (
-                      <p className="text-white font-medium text-lg tracking-wide">{userData.billingAddress}</p>
-                    )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Personal Details Fields */}
+                    {[
+                      { icon: FaUser, label: 'Full Name', value: userData.fullName, type: 'text', field: 'fullName' },
+                      { icon: FaEnvelope, label: 'Email', value: userData.email, type: 'email', field: 'email' },
+                      { icon: FaPhone, label: 'Phone', value: userData.phone, type: 'tel', field: 'phone' },
+                      { icon: FaCalendarAlt, label: 'Date of Birth', value: userData.dateOfBirth, type: 'date', field: 'dateOfBirth' },
+                      { icon: FaVenusMars, label: 'Gender', value: userData.gender, type: 'select', field: 'gender', 
+                        options: ['Male', 'Female', 'Other'] },
+                      { icon: FaBriefcase, label: 'Occupation', value: userData.occupation, type: 'text', field: 'occupation' }
+                    ].map((field, index) => (
+                      <div key={index} className="bg-indigo-900/20 rounded-xl p-4 border border-indigo-500/20">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-indigo-500/20 p-3 rounded-xl">
+                            <field.icon className="h-5 w-5 text-indigo-400" />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-sm font-medium text-gray-400">{field.label}</label>
+                            {isEditing ? (
+                              field.type === 'select' ? (
+                                <select
+                                  value={field.value}
+                                  onChange={(e) => setUserData({ ...userData, [field.field]: e.target.value })}
+                                  className="mt-1 w-full bg-indigo-900/20 border border-indigo-500/20 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 transition-all duration-300"
+                                >
+                                  {field.options.map(option => (
+                                    <option key={option} value={option}>{option}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type={field.type}
+                                  value={field.value}
+                                  onChange={(e) => setUserData({ ...userData, [field.field]: e.target.value })}
+                                  className="mt-1 w-full bg-indigo-900/20 border border-indigo-500/20 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 transition-all duration-300"
+                                />
+                              )
+                            ) : (
+                              <p className="text-white font-medium mt-1">{field.value}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-2 tracking-wide">Preferred Payment Method</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={userData.preferredPayment}
-                        onChange={(e) => setUserData({ ...userData, preferredPayment: e.target.value })}
-                        className="w-full rounded-lg bg-white/5 border border-purple-900/50 text-white shadow-sm focus:border-purple-400 focus:ring-purple-400 font-light p-3 transition-all duration-300 tracking-wide"
-                      />
-                    ) : (
-                      <p className="text-white font-medium text-lg tracking-wide">{userData.preferredPayment}</p>
-                    )}
+                </div>
+
+                {/* Social Media and Preferences Grid */}
+                <div className="lg:col-span-3 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Social Media Links */}
+                  <div className="glass-effect gradient-border bg-gradient-to-br from-indigo-600/10 to-indigo-900/10 backdrop-blur-sm rounded-xl p-6 border border-indigo-500/20">
+                    <h3 className="text-xl font-semibold text-white  ml-6 mt-6">Social Media</h3>
+                    <div className="space-y-4">
+                      {[
+                        { name: 'facebook', icon: FaFacebookF, color: 'blue', label: 'Facebook' },
+                        { name: 'twitter', icon: FaTwitter, color: 'sky', label: 'Twitter' },
+                        { name: 'linkedin', icon: FaLinkedinIn, color: 'blue', label: 'LinkedIn' },
+                        { name: 'instagram', icon: FaInstagram, color: 'pink', label: 'Instagram' }
+                      ].map((social) => (
+                        <div key={social.name} className="bg-black/20 rounded-xl p-4 hover:bg-black/30 transition-all duration-300">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`bg-${social.color}-500/20 p-2 rounded-lg`}>
+                                <social.icon className={`h-5 w-5 text-${social.color}-400`} />
+                              </div>
+                              <span className="text-gray-300">{social.label}</span>
+                            </div>
+                            {isEditing ? (
+                              <input
+                                type="url"
+                                value={userData.socialMedia[social.name]}
+                                onChange={(e) => setUserData({
+                                  ...userData,
+                                  socialMedia: { ...userData.socialMedia, [social.name]: e.target.value }
+                                })}
+                                placeholder={`https://${social.name}.com/username`}
+                                className="w-32 bg-indigo-900/20 border border-indigo-500/20 rounded-lg px-3 py-1 text-white text-sm"
+                              />
+                            ) : userData.socialMedia[social.name] ? (
+                              <a
+                                href={userData.socialMedia[social.name]}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-indigo-400 hover:text-indigo-300 transition-colors duration-300"
+                              >
+                                Visit
+                              </a>
+                            ) : (
+                              <span className="text-gray-500 text-sm">Not linked</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Preferences */}
+                  <div className="bg-gradient-to-br from-indigo-600/10 to-indigo-900/10 backdrop-blur-sm rounded-xl p-6 border border-indigo-500/20">
+                    <h3 className="text-xl font-semibold text-white mb-6">Preferences</h3>
+                    <div className="space-y-4">
+                      {Object.entries(userData.preferences).map(([key, value]) => (
+                        <div key={key} className="flex items-center justify-between p-4 bg-black/20 rounded-xl">
+                          <span className="text-gray-300 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                          <div className="relative">
+                            <input
+                              type="checkbox"
+                              checked={value}
+                              onChange={(e) => setUserData({
+                                ...userData,
+                                preferences: { ...userData.preferences, [key]: e.target.checked }
+                              })}
+                              className="sr-only"
+                              id={`toggle-${key}`}
+                              disabled={!isEditing}
+                            />
+                            <label
+                              htmlFor={`toggle-${key}`}
+                              className={`block w-14 h-8 rounded-full transition-colors duration-300 ease-in-out ${
+                                value ? 'bg-indigo-600' : 'bg-gray-600'
+                              } cursor-pointer`}
+                            >
+                              <span
+                                className={`block w-6 h-6 mt-1 ml-1 rounded-full transition-transform duration-300 ease-in-out bg-white transform ${
+                                  value ? 'translate-x-6' : ''
+                                }`}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
-              {isEditing && (
-                <div className="mt-8 flex justify-end space-x-4">
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className="px-6 py-3 border border-purple-500/50 rounded-lg shadow-lg text-sm font-medium text-purple-300 bg-transparent hover:bg-purple-900/30 transition-all duration-300 flex items-center"
-                  >
-                    <FaTimes className="mr-2" />
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    className="px-6 py-3 border border-transparent rounded-lg shadow-lg text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 transition-all duration-300 flex items-center"
-                  >
-                    <FaSave className="mr-2" />
-                    Save Changes
-                  </button>
-                </div>
-              )}
             </div>
           )}
 
           {/* Orders Section */}
           {activeTab === 'orders' && (
-            <div className="bg-black/30 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-purple-900/50">
-              <div className="p-6 border-b border-purple-800 flex justify-between items-center">
+            <div className="bg-black/30 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-indigo-900/50">
+              <div className="p-6 border-b border-indigo-800 flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-white">My Orders</h2>
                 <button
                   onClick={handleDownloadOrders}
                   disabled={isDownloading}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                     isDownloading
-                      ? 'bg-purple-700 text-gray-300 cursor-not-allowed'
-                      : 'bg-purple-600 text-white hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-500/25'
+                      ? 'bg-indigo-700 text-gray-300 cursor-not-allowed'
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/25'
                   }`}
                 >
                   {isDownloading ? (
@@ -402,7 +729,7 @@ const Profile = () => {
                 </button>
               </div>
               {showNotification && (
-                <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
+                <div className="notification fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
                   Orders downloaded successfully!
                 </div>
               )}
@@ -418,12 +745,12 @@ const Profile = () => {
           {activeTab === 'wishlist' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {wishlist.map((item) => (
-                <div key={item.id} className="bg-black/30 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden border border-purple-900/50 transform hover:scale-105 transition-all duration-300">
+                <div key={item.id} className="bg-black/30 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden border border-indigo-900/50 transform hover:scale-105 transition-all duration-300">
                   <img src={item.image} alt={item.name} className="w-full h-56 object-cover" />
                   <div className="p-6">
                     <h3 className="text-xl font-semibold text-white mb-2 tracking-wide">{item.name}</h3>
-                    <p className="text-xl font-medium text-purple-400 mb-4 tracking-wide">{item.price}</p>
-                    <button className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 font-medium transition-all duration-300 tracking-wide">
+                    <p className="text-xl font-medium text-indigo-400 mb-4 tracking-wide">{item.price}</p>
+                    <button className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 font-medium transition-all duration-300 tracking-wide">
                       Add to Cart
                     </button>
                   </div>
@@ -434,9 +761,9 @@ const Profile = () => {
 
           {/* Chat History Section */}
           {activeTab === 'chat' && (
-            <div className="bg-black/30 backdrop-blur-sm shadow-xl rounded-xl divide-y divide-purple-800 border border-purple-900/50">
+            <div className="bg-black/30 backdrop-blur-sm shadow-xl rounded-xl divide-y divide-indigo-800 border border-indigo-900/50">
               {chatHistory.map((chat) => (
-                <div key={chat.id} className="p-6 hover:bg-purple-900/20 transition-colors duration-300">
+                <div key={chat.id} className="p-6 hover:bg-indigo-900/20 transition-colors duration-300">
                   <div className="flex justify-between items-center">
                     <p className="text-base text-white tracking-wide">{chat.message}</p>
                     <span className="text-sm text-gray-400 tracking-wide">{chat.date}</span>
@@ -448,49 +775,153 @@ const Profile = () => {
 
           {/* Settings Section */}
           {activeTab === 'settings' && (
-            <div className="bg-black/30 backdrop-blur-sm shadow-xl rounded-xl p-8 border border-purple-900/50">
+            <div className="bg-black/30 backdrop-blur-sm shadow-xl rounded-xl p-8 border border-indigo-900/50">
               <div className="space-y-8">
                 <div>
-                  <h3 className="text-xl font-semibold text-purple-400 mb-6 tracking-wide">Change Password</h3>
+                  <h3 className="text-xl font-semibold text-indigo-400 mb-6 tracking-wide">Change Password</h3>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-200 mb-2 tracking-wide">Current Password</label>
                       <input
                         type="password"
-                        className="w-full rounded-lg bg-white/5 border border-purple-900/50 text-white shadow-sm focus:border-purple-400 focus:ring-purple-400 font-light p-3 transition-all duration-300 tracking-wide"
+                        className="w-full rounded-lg bg-white/5 border border-indigo-900/50 text-white shadow-sm focus:border-indigo-400 focus:ring-indigo-400 font-light p-3 transition-all duration-300 tracking-wide"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-200 mb-2 tracking-wide">New Password</label>
                       <input
                         type="password"
-                        className="w-full rounded-lg bg-white/5 border border-purple-900/50 text-white shadow-sm focus:border-purple-400 focus:ring-purple-400 font-light p-3 transition-all duration-300 tracking-wide"
+                        className="w-full rounded-lg bg-white/5 border border-indigo-900/50 text-white shadow-sm focus:border-indigo-400 focus:ring-indigo-400 font-light p-3 transition-all duration-300 tracking-wide"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-200 mb-2 tracking-wide">Confirm New Password</label>
                       <input
                         type="password"
-                        className="w-full rounded-lg bg-white/5 border border-purple-900/50 text-white shadow-sm focus:border-purple-400 focus:ring-purple-400 font-light p-3 transition-all duration-300 tracking-wide"
+                        className="w-full rounded-lg bg-white/5 border border-indigo-900/50 text-white shadow-sm focus:border-indigo-400 focus:ring-indigo-400 font-light p-3 transition-all duration-300 tracking-wide"
                       />
                     </div>
-                    <button className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 font-medium transition-all duration-300 tracking-wide">
+                    <button className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 font-medium transition-all duration-300 tracking-wide">
                       Update Password
                     </button>
                   </div>
                 </div>
 
-                <div className="border-t border-purple-800 pt-8">
+                <div className="border-t border-indigo-800 pt-8">
                   <h3 className="text-xl font-semibold text-red-400 mb-4 tracking-wide">Delete Account</h3>
                   <p className="text-gray-300 mb-6 tracking-wide">
                     Once you delete your account, there is no going back. Please be certain.
                   </p>
-                  <button className="bg-red-900/50 text-red-100 py-3 px-6 rounded-lg hover:bg-red-800/50 flex items-center font-medium border border-red-700 transition-all duration-300 tracking-wide">
+                  <button
+                    onClick={handleDeleteAccount}
+                    className="bg-red-900/50 text-red-100 py-3 px-6 rounded-lg hover:bg-red-800/50 flex items-center font-medium border border-red-700 transition-all duration-300 tracking-wide">
                     <FaTrash className="mr-2" />
                     Delete Account
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Sign Out Section */}
+          {activeTab === 'signout' && (
+            <div className="bg-black/30 backdrop-blur-sm shadow-xl rounded-xl p-8 border border-indigo-900/50">
+              <div className="max-w-2xl mx-auto space-y-8">
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-900/20 mb-4">
+                    <FaSignOutAlt className="h-8 w-8 text-red-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-4">Sign Out & Account Management</h2>
+                  <p className="text-gray-300 mb-8">
+                    You can sign out safely or manage your account deletion here.
+                    Please note that account deletion is permanent and cannot be undone.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-6">
+                  <button
+                    onClick={() => {
+                      localStorage.clear();
+                      navigate('/login');
+                    }}
+                    className="w-full bg-indigo-600 text-white py-4 rounded-xl hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center gap-3 group"
+                  >
+                    <FaSignOutAlt className="h-5 w-5 group-hover:rotate-180 transition-transform duration-300" />
+                    <span>Sign Out Safely</span>
+                  </button>
+
+                  <div className="border-t border-indigo-800 pt-8">
+                    <div className="bg-red-900/10 rounded-xl p-6 border border-red-900/50">
+                      <h3 className="text-xl font-semibold text-red-400 mb-4">Delete Account</h3>
+                      <p className="text-gray-300 mb-4">
+                        Your account must be at least 6 months old to be eligible for deletion.
+                        This action is permanent and will erase all your data.
+                      </p>
+                      
+                      <div className="flex flex-col gap-4">
+                        <button
+                          onClick={handleDeleteAccount}
+                          className="bg-red-600/20 text-red-100 py-3 px-6 rounded-xl hover:bg-red-600/30 flex items-center justify-center gap-2 border border-red-900/50 transition-all duration-300"
+                        >
+                          <FaTrash className="h-5 w-5" />
+                          <span>Initialize Account Deletion</span>
+                        </button>
+
+                        {deleteError && (
+                          <div className="text-red-400 text-sm bg-red-900/20 p-4 rounded-lg">
+                            {deleteError}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Delete Account Confirmation Modal */}
+              {showDeleteConfirmation && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+                  <div className="bg-gray-900 rounded-xl p-8 max-w-md w-full mx-4 border border-red-900/50 shadow-2xl animate-modalFadeIn">
+                    <div className="text-center">
+                      <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-900/20 mb-4">
+                        <FaTrash className="h-6 w-6 text-red-400" />
+                      </div>
+                      <h3 className="text-2xl font-semibold text-white mb-4">Confirm Account Deletion</h3>
+                      <p className="text-gray-300 mb-6">
+                        To confirm deletion, please type:<br />
+                        <span className="text-red-400 font-medium">"yes i need delete my account"</span>
+                      </p>
+
+                      <input
+                        type="text"
+                        value={deleteConfirmText}
+                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                        placeholder="Type confirmation phrase"
+                        className="w-full bg-black/30 border border-red-900/50 rounded-lg px-4 py-3 text-white mb-6 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+
+                      <div className="flex justify-center space-x-4">
+                        <button
+                          onClick={() => {
+                            setShowDeleteConfirmation(false);
+                            setDeleteConfirmText('');
+                            setDeleteError('');
+                          }}
+                          className="px-6 py-3 border border-indigo-900/50 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleConfirmDelete}
+                          className="px-6 py-3 bg-red-600 rounded-lg text-white hover:bg-red-700 transition-colors"
+                        >
+                          Confirm Deletion
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -499,7 +930,7 @@ const Profile = () => {
       {/* Edit Order Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-gray-900 rounded-xl p-8 max-w-md w-full mx-4 border border-purple-900/50 shadow-2xl">
+          <div className="bg-gray-900 rounded-xl p-8 max-w-md w-full mx-4 border border-indigo-900/50 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-semibold text-white">Edit Order</h3>
               <button
@@ -517,7 +948,7 @@ const Profile = () => {
                     type="text"
                     value={selectedOrder.id}
                     readOnly
-                    className="w-full bg-gray-800 border border-purple-900/50 rounded-lg px-4 py-2 text-white"
+                    className="w-full bg-gray-800 border border-indigo-900/50 rounded-lg px-4 py-2 text-white"
                   />
                 </div>
                 <div>
@@ -526,7 +957,7 @@ const Profile = () => {
                     type="date"
                     value={selectedOrder.date}
                     onChange={(e) => setSelectedOrder({ ...selectedOrder, date: e.target.value })}
-                    className="w-full bg-gray-800 border border-purple-900/50 rounded-lg px-4 py-2 text-white"
+                    className="w-full bg-gray-800 border border-indigo-900/50 rounded-lg px-4 py-2 text-white"
                   />
                 </div>
                 <div>
@@ -535,7 +966,7 @@ const Profile = () => {
                     type="text"
                     value={selectedOrder.items}
                     onChange={(e) => setSelectedOrder({ ...selectedOrder, items: e.target.value })}
-                    className="w-full bg-gray-800 border border-purple-900/50 rounded-lg px-4 py-2 text-white"
+                    className="w-full bg-gray-800 border border-indigo-900/50 rounded-lg px-4 py-2 text-white"
                   />
                 </div>
                 <div>
@@ -544,7 +975,7 @@ const Profile = () => {
                     type="text"
                     value={selectedOrder.total}
                     onChange={(e) => setSelectedOrder({ ...selectedOrder, total: e.target.value })}
-                    className="w-full bg-gray-800 border border-purple-900/50 rounded-lg px-4 py-2 text-white"
+                    className="w-full bg-gray-800 border border-indigo-900/50 rounded-lg px-4 py-2 text-white"
                   />
                 </div>
                 <div>
@@ -552,7 +983,7 @@ const Profile = () => {
                   <select
                     value={selectedOrder.status}
                     onChange={(e) => setSelectedOrder({ ...selectedOrder, status: e.target.value })}
-                    className="w-full bg-gray-800 border border-purple-900/50 rounded-lg px-4 py-2 text-white"
+                    className="w-full bg-gray-800 border border-indigo-900/50 rounded-lg px-4 py-2 text-white"
                   >
                     <option value="Completed">Completed</option>
                     <option value="Pending">Pending</option>
@@ -565,13 +996,13 @@ const Profile = () => {
             <div className="mt-6 flex justify-end space-x-4">
               <button
                 onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 border border-purple-900/50 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
+                className="px-4 py-2 border border-indigo-900/50 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="px-4 py-2 bg-purple-600 rounded-lg text-white hover:bg-purple-700 transition-colors"
+                className="px-4 py-2 bg-indigo-600 rounded-lg text-white hover:bg-indigo-700 transition-colors"
               >
                 Save Changes
               </button>
@@ -583,7 +1014,7 @@ const Profile = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-gray-900 rounded-xl p-8 max-w-md w-full mx-4 border border-purple-900/50 shadow-2xl">
+          <div className="bg-gray-900 rounded-xl p-8 max-w-md w-full mx-4 border border-indigo-900/50 shadow-2xl">
             <div className="text-center">
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-900/20 mb-4">
                 <FaTrash className="h-6 w-6 text-red-400" />
@@ -603,7 +1034,7 @@ const Profile = () => {
             <div className="flex justify-center space-x-4">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="px-6 py-2 border border-purple-900/50 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
+                className="px-6 py-2 border border-indigo-900/50 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
               >
                 Cancel
               </button>
@@ -618,10 +1049,7 @@ const Profile = () => {
         </div>
       )}
 
-      {/* Footer */}
-      <div className="mt-24">
-        <Footer />
-      </div>
+      <Footer />
     </div>
   );
 };
