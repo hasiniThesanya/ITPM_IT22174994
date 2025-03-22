@@ -10,6 +10,11 @@ const Home = () => {
   const handleSeeAll = () => {
     navigate('/product');
   };
+
+  const handleChatWithBot = () => {
+    window.location.href = 'http://localhost:3001'; // Navigate to the chatbot application running on port 3001
+  };
+  
   const featuredProducts = [
     {
       id: 1,
@@ -92,7 +97,9 @@ const Home = () => {
                 <button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-xl transition duration-300 transform hover:scale-105 font-medium text-lg shadow-lg hover:shadow-purple-500/25">
                   Shop Now
                 </button>
-                <button className="border border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white px-8 py-4 rounded-xl transition duration-300 font-medium text-lg hover:shadow-lg hover:shadow-purple-500/25">
+                <button 
+                  onClick={handleChatWithBot}
+                  className="border border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white px-8 py-4 rounded-xl transition duration-300 font-medium text-lg hover:shadow-lg hover:shadow-purple-500/25">
                   Chat with BOT
                 </button>
               </div>
