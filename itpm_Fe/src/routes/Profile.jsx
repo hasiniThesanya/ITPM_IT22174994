@@ -8,6 +8,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "../styles/carousel.css";
+import axios from 'axios';
 // Add Space Grotesk font import
 const spaceGrotesk = {
   fontFamily: "'Space Grotesk', sans-serif",
@@ -23,15 +24,15 @@ const Profile = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [userData, setUserData] = useState({
-    fullName: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 234 567 8900',
-    dateOfBirth: '1990-01-01',
+    name: '',
+    email: '',
+    phone: '',
+    dateOfBirth: '',
     gender: 'Male',
-    occupation: 'Software Engineer',
-    company: 'Tech Corp',
-    shippingAddress: '123 Main St, City, Country',
-    billingAddress: '123 Main St, City, Country',
+    occupation: '',
+    company: '',
+    shippingAddress: '',
+    billingAddress: '',
     preferredPayment: 'Credit Card',
     socialMedia: {
       facebook: '',
@@ -51,6 +52,7 @@ const Profile = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [accountCreationDate] = useState('2023-09-15'); // This should come from your backend
   const [deleteError, setDeleteError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const profileImageRef = useRef(null);
   const coverImageRef = useRef(null);
@@ -93,6 +95,40 @@ const Profile = () => {
     setOrders(savedOrders);
   }, []);
 
+  useEffect(() => {
+    // Get user data from localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setUserData(prev => ({
+        ...prev,
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        dateOfBirth: user.dateOfBirth || '',
+        gender: user.gender || 'Male',
+        occupation: user.occupation || '',
+        company: user.company || '',
+        shippingAddress: user.shippingAddress || '',
+        billingAddress: user.billingAddress || '',
+        preferredPayment: user.preferredPayment || 'Credit Card',
+        socialMedia: user.socialMedia || {
+          facebook: '',
+          twitter: '',
+          linkedin: '',
+          instagram: ''
+        },
+        preferences: user.preferences || {
+          newsletter: true,
+          notifications: true,
+          twoFactorAuth: false
+        }
+      }));
+    } else {
+      navigate('/auth');
+    }
+  }, [navigate]);
+
   const handleProfileImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -119,8 +155,38 @@ const Profile = () => {
     }
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put(
+        'http://localhost:3001/api/auth/update-profile',
+        { name: userData.name },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.data.success) {
+        // Update localStorage with new user data
+        const updatedUser = { ...JSON.parse(localStorage.getItem('user')), name: userData.name };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        setSuccess('Profile updated successfully!');
+        setIsEditing(false);
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch {
+      setDeleteError('Failed to update profile. Please try again.');
+      setTimeout(() => setDeleteError(''), 3000);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/auth');
   };
 
   const handleEditOrder = (order) => {
@@ -274,7 +340,7 @@ const Profile = () => {
             </div>
           </div>
           <div className="mt-24">
-            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-blue-400 to-indigo-400 tracking-tight">{userData.fullName}</h1>
+            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-blue-400 to-indigo-400 tracking-tight">{userData.name}</h1>
             <p className="text-gray-300 font-light text-lg tracking-wide mt-2">{userData.email}</p>
           </div>
         </div>
@@ -567,7 +633,7 @@ const Profile = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {/* Personal Details Fields */}
                     {[
-                      { icon: FaUser, label: 'Full Name', value: userData.fullName, type: 'text', field: 'fullName' },
+                      { icon: FaUser, label: 'Full Name', value: userData.name, type: 'text', field: 'name' },
                       { icon: FaEnvelope, label: 'Email', value: userData.email, type: 'email', field: 'email' },
                       { icon: FaPhone, label: 'Phone', value: userData.phone, type: 'tel', field: 'phone' },
                       { icon: FaCalendarAlt, label: 'Date of Birth', value: userData.dateOfBirth, type: 'date', field: 'dateOfBirth' },
@@ -840,10 +906,7 @@ const Profile = () => {
 
                 <div className="flex flex-col gap-6">
                   <button
-                    onClick={() => {
-                      localStorage.clear();
-                      navigate('/login');
-                    }}
+                    onClick={handleLogout}
                     className="w-full bg-indigo-600 text-white py-4 rounded-xl hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center gap-3 group"
                   >
                     <FaSignOutAlt className="h-5 w-5 group-hover:rotate-180 transition-transform duration-300" />
@@ -1046,6 +1109,18 @@ const Profile = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Success and Error Messages */}
+      {success && (
+        <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-400 text-sm">
+          {success}
+        </div>
+      )}
+      {deleteError && (
+        <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+          {deleteError}
         </div>
       )}
 

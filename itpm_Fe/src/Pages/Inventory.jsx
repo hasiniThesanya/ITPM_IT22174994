@@ -627,7 +627,7 @@ const Inventory = () => {
         <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
             <div>
-              <h1 className="text-2xl font-bold text-white">Inventory Management</h1>
+              <h1 className="text-2xl font-bold text-white">Product Management System</h1>
               <p className="text-gray-300 mt-1 text-sm">Manage your product inventory efficiently</p>
             </div>
             <div className="flex items-center space-x-3">
