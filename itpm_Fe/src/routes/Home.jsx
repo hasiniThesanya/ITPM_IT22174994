@@ -1,10 +1,37 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaLaptop, FaShieldAlt, FaHeadset, FaTruck, FaStar, FaArrowRight } from 'react-icons/fa';
 import Footer from '../Components/Footer';
 import Hero from '../assets/Images/Home/Group 276.png';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Home = () => {
+  const [users, setUsers] = useState([]); // ✅ Corrected: useState, not userState
+
+  useEffect(() => {
+    axios.get('http://localhost:3001/getusers') // Match the port 3001
+      .then(response => {
+        setUsers(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching users:', error);
+      });
+  }, []);
+  
+const [pcBuilds, setPcBuilds] = useState([]); // State for PC builds
+
+useEffect(() => {
+  try {
+    axios.get('http://localhost:3001/getpcbuilds')
+      .then(response => {
+        setPcBuilds(response.data); // Corrected to setPcBuilds
+      });
+  } catch (error) {
+    console.error('Error fetching pc builds:', error);
+  }
+}, []);
+
+
   const navigate = useNavigate();
   
   const handleSeeAll = () => {
@@ -14,6 +41,10 @@ const Home = () => {
   const handleChatWithBot = () => {
     window.location.href = 'http://localhost:3001'; // Navigate to the chatbot application running on port 3001
   };
+
+
+
+
   
   const featuredProducts = [
     {
@@ -65,6 +96,16 @@ const Home = () => {
     }
   ];
   
+  useEffect(() => {
+    axios.get('http://localhost:8000/getUsers') // ensure the port matches backend
+      .then(response => {
+        setUsers(response.data); // <-- set state here
+      })
+      .catch(error => {
+        console.error('Error fetching users:', error);
+      });
+  }, []);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 text-white">
@@ -228,6 +269,60 @@ const Home = () => {
       <div className="mt-24">
         <Footer />
       </div>
+
+
+      <div>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {users.map((user) => (
+        <tr key={user._id}>
+          <td>{user.Name}</td>
+          <td>{user.Email}</td>
+          <td>{user.Role}</td>
+          <td>{user.Status}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+
+<div>
+  <table>
+    <thead>
+      <tr>
+        <th>category</th>
+        <th>id</th>
+        <th>name</th>
+        <th>price</th>
+        <th>specs</th>
+        <th>brand</th>
+      </tr>
+    </thead>
+    <tbody>
+      {pcBuilds.map((pcBuild) => (
+        <tr key={pcBuild._id}> {/* Corrected key */}
+          <td>{pcBuild.category}</td> {/* Corrected property */}
+          <td>{pcBuild.id}</td> {/* Corrected property */}
+          <td>{pcBuild.name}</td> {/* Corrected property */}
+          <td>{pcBuild.price}</td> {/* Corrected property */}
+          <td>{pcBuild.specs}</td> {/* Corrected property */}
+          <td>{pcBuild.brand}</td> {/* Corrected property */}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+
     </div>
   );
 };

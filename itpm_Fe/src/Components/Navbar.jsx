@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, User, LogIn, UserPlus, LogOut, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { FaUser, FaSignOutAlt, FaCog } from 'react-icons/fa';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,6 +11,8 @@ const Navbar = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const dropdownRef = useRef(null);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -21,6 +24,13 @@ const Navbar = () => {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
   }, []);
 
   const handleSignIn = (e) => {
@@ -37,6 +47,13 @@ const Navbar = () => {
     setShowSignUpModal(false);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    navigate('/auth');
+  };
+
   return (
     <nav className="bg-gray-900 text-white p-4 fixed top-0 left-0 w-full z-50">
       <div className="container mx-auto flex justify-between items-center">
@@ -48,7 +65,9 @@ const Navbar = () => {
           <li><Link to="/about" className="hover:text-gray-400">About</Link></li>
           <li><Link to="/Product" className="hover:text-gray-400">Product</Link></li>
           <li><Link to="/inventory" className="hover:text-gray-400">Inventory</Link></li>
+          <li><Link to="/PCBuilder" className="hover:text-gray-400">PC Builder</Link></li>
           <li><Link to="/contact" className="hover:text-gray-400">Contact</Link></li>
+          <li><Link to="/admin" className="hover:text-gray-400">Admin</Link></li>
           <li className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowProfileDropdown(!showProfileDropdown)}
@@ -70,7 +89,7 @@ const Navbar = () => {
               <div className="absolute right-0 mt-2 w-48 rounded-lg bg-gray-800 border border-gray-700 shadow-xl py-2 z-50">
                 <div className="px-4 py-3 border-b border-gray-700">
                   <p className="text-sm text-gray-300">Welcome back!</p>
-                  <p className="text-sm font-medium text-white truncate">john.doe@example.com</p>
+                  <p className="text-sm font-medium text-white truncate">{user?.email}</p>
                 </div>
                 <div className="py-1">
                   <Link
@@ -78,38 +97,21 @@ const Navbar = () => {
                     onClick={() => setShowProfileDropdown(false)}
                     className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200"
                   >
-                    <User className="w-4 h-4 mr-3" />
+                    <FaUser className="w-4 h-4 mr-3" />
                     My Profile
                   </Link>
-                  <button
-                    onClick={() => {
-                      setShowSignInModal(true);
-                      setShowProfileDropdown(false);
-                    }}
-                    className="w-full flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200"
+                  <Link
+                    to="/settings"
+                    className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200"
                   >
-                    <LogIn className="w-4 h-4 mr-3" />
-                    Sign In
-                  </button>
+                    <FaCog className="w-4 h-4 mr-3" />
+                    Settings
+                  </Link>
                   <button
-                    onClick={() => {
-                      setShowSignUpModal(true);
-                      setShowProfileDropdown(false);
-                    }}
-                    className="w-full flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200"
-                  >
-                    <UserPlus className="w-4 h-4 mr-3" />
-                    Sign Up
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowProfileDropdown(false);
-                      // Handle logout
-                      console.log('Logging out...');
-                    }}
+                    onClick={handleLogout}
                     className="w-full flex items-center px-4 py-2 text-sm text-red-400 hover:bg-red-900/30 hover:text-red-300 transition-colors duration-200"
                   >
-                    <LogOut className="w-4 h-4 mr-3" />
+                    <FaSignOutAlt className="w-4 h-4 mr-3" />
                     Logout
                   </button>
                 </div>
@@ -135,7 +137,9 @@ const Navbar = () => {
           <li><Link to="/about" className="block p-2 hover:bg-gray-700">About</Link></li>
           <li><Link to="/Product" className="block p-2 hover:bg-gray-700">Product</Link></li>
           <li><Link to="/inventory" className="block p-2 hover:bg-gray-700">Inventory</Link></li>
+          <li><Link to="/PCBuilder" className="block p-2 hover:bg-gray-700">PC Builder</Link></li>
           <li><Link to="/contact" className="block p-2 hover:bg-gray-700">Contact</Link></li>
+          <li><Link to="/admin" className="block p-2 hover:bg-gray-700">Admin</Link></li>
           <li className="space-y-1">
             <button
               onClick={() => setShowProfileDropdown(!showProfileDropdown)}
@@ -154,30 +158,9 @@ const Navbar = () => {
             {showProfileDropdown && (
               <div className="pl-4 space-y-1">
                 <Link to="/profile" className="block p-2 hover:bg-gray-700">My Profile</Link>
+                <Link to="/settings" className="block p-2 hover:bg-gray-700">Settings</Link>
                 <button
-                  onClick={() => {
-                    setShowSignInModal(true);
-                    setShowProfileDropdown(false);
-                  }}
-                  className="block p-2 hover:bg-gray-700"
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => {
-                    setShowSignUpModal(true);
-                    setShowProfileDropdown(false);
-                  }}
-                  className="block p-2 hover:bg-gray-700"
-                >
-                  Sign Up
-                </button>
-                <button
-                  onClick={() => {
-                    setShowProfileDropdown(false);
-                    // Handle logout
-                    console.log('Logging out...');
-                  }}
+                  onClick={handleLogout}
                   className="w-full text-left p-2 text-red-400 hover:bg-red-900/30 hover:text-red-300"
                 >
                   Logout
